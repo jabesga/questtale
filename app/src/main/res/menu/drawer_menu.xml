@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/map"
+            android:checked="false"
+            android:icon="@drawable/map_icon"
+            android:title="Map" />
+
+        <item
+        android:id="@+id/journal"
+        android:checked="false"
+        android:icon="@drawable/map_icon"
+        android:title="Journal" />
+
+    </group>
+</menu>

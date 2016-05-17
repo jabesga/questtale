@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Quest Tale</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="google_app_id">239701029972</string>
+</resources>
