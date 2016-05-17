@@ -1,17 +1,32 @@
 package com.besga.jonander.questtale;
 
+
+import android.app.Activity;
+import android.content.Intent;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
+
+
+    protected  static GoogleApiClient mGoogleApiClient;
 
     private Toolbar toolbar;
     private NavigationView navigationView;
@@ -78,5 +93,70 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        buildGoogleApiClient();
+
     }
+
+    /**
+     * Builds a GoogleApiClient. Uses the addApi() method to request the LocationServices API.
+     */
+    protected synchronized void buildGoogleApiClient() {
+        Log.i("CUSTOM", "Building GoogleApiClient...");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        Log.i("CUSTOM", "Connected to ApiClient");
+        Toast.makeText(getApplicationContext(),"Connected to ApiClient",Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.i("CUSTOM", "Disconnected to ApiClient");
+        mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case 0x1:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        Log.d("CUSTOM", "User has changed the location settings");
+                        CustomMapFragment custom_map_fragment = (CustomMapFragment) getSupportFragmentManager().findFragmentById(R.id.frame);
+                        custom_map_fragment.locationSettingsAreEnabled();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        // The user was asked to change settings, but chose not to
+                        Log.d("CUSTOM", "He doesn't want to change them");
+                        // Don't show map
+                        break;
+                    default:
+                        break;
+                }
+                break;
+        }
+    }
+
 }
