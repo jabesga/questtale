@@ -19,7 +19,7 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:text="INTERACT WITH..."
+        android:text="INTERACT..."
         android:visibility="gone">
 
     </Button>

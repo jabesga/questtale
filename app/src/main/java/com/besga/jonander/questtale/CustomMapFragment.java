@@ -3,10 +3,12 @@ package com.besga.jonander.questtale;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
+import android.provider.SyncStateContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
@@ -56,8 +58,8 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
     private Marker theMarker;
     Circle interactiveRadius;
     Button interactionButton;
-    private ArrayList<Marker> markerList;
-    private ArrayList<Marker> reachableMarkers;
+    private ArrayList<MapEntity> mapEntitiesList;
+    private ArrayList<MapEntity> reachableMapEntitiesList;
 
 
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
@@ -139,27 +141,73 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
         //map.setOnMarkerClickListener(this);
 
         // Download markers
-        String markers_data = "{'markers_data':[{'lat': 43.289988, 'lng': -2.979743, 'title': '1'}, {'lat': 43.289979, 'lng': -2.979805, 'title': '2'}]}";
-        generateMarkers(markers_data);
+        String entities_data = "{'entities_data':\n" +
+                "    [\n" +
+                "        {\n" +
+                "            'entity_id': 1,\n" +
+                "            'entity_name': 'Igor Quintela',\n" +
+                "            'conversation': 'Pues aquí estoy. Estudiando en Ariz. Y tú?',\n" +
+                "            'close_answer': 'Pasaba a saludarte',\n" +
+                "            'marker_data': {\n" +
+                "                'lat': 43.289988,\n" +
+                "                'lng': -2.979743,\n" +
+                "                'title': '?'\n" +
+                "            }\n" +
+                "        },\n" +
+                "        {\n" +
+                "            'entity_id': 2,\n" +
+                "            'entity_name': 'Nagore Reina',\n" +
+                "            'conversation': 'Soy la princesa de este castillo, arrodillate ante mi o te echaré a mis dragones',\n" +
+                "            'close_answer': 'Como ordenes',\n" +
+                "            'marker_data': {\n" +
+                "                'lat': 43.239887,\n" +
+                "                'lng': -2.878159,\n" +
+                "                'title': '?'\n" +
+                "            }\n" +
+                "        },\n" +
+                "        {\n" +
+                "            'entity_id': 3,\n" +
+                "            'entity_name': 'Jesus Angel',\n" +
+                "            'conversation': 'SOY RICO MUAHAHAH',\n" +
+                "            'close_answer': 'Bueno mejor me voy yendo',\n" +
+                "            'marker_data': {\n" +
+                "                'lat': 43.239640,\n" +
+                "                'lng': -2.878077,\n" +
+                "                'title': '?'\n" +
+                "            }\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}";
+
+        generateMarkers(entities_data);
 
         //Update own position
         startLocationUpdates();
     }
     public void generateMarkers(String data){
-        markerList = new ArrayList<Marker>();
+        mapEntitiesList = new ArrayList<MapEntity>();
 
         try {
             JSONObject jsonObject = new JSONObject(data);
-            JSONArray marker_list = jsonObject.getJSONArray("markers_data");
-            for(int i = 0; i < marker_list.length(); i++){
-                Double lat = (Double) marker_list.getJSONObject(i).get("lat");
-                Double lng = (Double) marker_list.getJSONObject(i).get("lng");
-                String title = (String) marker_list.getJSONObject(i).get("title");
+            JSONArray entities_list = jsonObject.getJSONArray("entities_data");
+            for(int i = 0; i < entities_list.length(); i++){
+                int entity_id = (int) entities_list.getJSONObject(i).get("entity_id");
+                String entity_name = (String) entities_list.getJSONObject(i).get("entity_name");
+                Log.d("CUSTOM", entity_name.toString());
+                String conversation = (String) entities_list.getJSONObject(i).get("conversation");
+                String close_answer = (String) entities_list.getJSONObject(i).get("close_answer");
+                JSONObject marker_data = (JSONObject) entities_list.getJSONObject(i).get("marker_data");
+                Double lat = marker_data.getDouble("lat");
+                Double lng = marker_data.getDouble("lng");
+                String title = marker_data.getString("title");
 
-                Marker marker = googleMap.addMarker(new MarkerOptions()
+                MarkerOptions mOptions = new MarkerOptions()
                         .position(new LatLng(lat,lng))
-                        .title(title));
-                markerList.add(marker);
+                        .title(title);
+                Marker new_marker = googleMap.addMarker(mOptions);
+
+                MapEntity new_entity = new MapEntity(entity_id, entity_name, conversation, close_answer, mOptions);
+                mapEntitiesList.add(new_entity);
             }
         }
         catch (JSONException e){
@@ -200,7 +248,7 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
 
         }
 
-        if(markerList.size() > 0){
+        if(mapEntitiesList.size() > 0){
             somethingAroundMe(mCurrentLocation);
         }
 
@@ -210,23 +258,23 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
         Log.d("CUSTOM", "Checking is something around");
         float[] distance = new float[2];
 
-        reachableMarkers = new ArrayList<>();
+        reachableMapEntitiesList = new ArrayList<>();
 
-        for(int i = 0; i < markerList.size(); i++){
-            Location.distanceBetween( markerList.get(i).getPosition().latitude, markerList.get(i).getPosition().longitude,
+        for(int i = 0; i < mapEntitiesList.size(); i++){
+            Location.distanceBetween( mapEntitiesList.get(i).getMarkerOptions().getPosition().latitude, mapEntitiesList.get(i).getMarkerOptions().getPosition().longitude,
                     interactiveRadius.getCenter().latitude, interactiveRadius.getCenter().longitude, distance);
 
             if( distance[0] > interactiveRadius.getRadius()  ){
                 interactionButton.setVisibility(View.GONE);
                 //Toast.makeText(getActivity(), "Outside", Toast.LENGTH_LONG).show();
             } else {
-                reachableMarkers.add(markerList.get(i));
+                reachableMapEntitiesList.add(mapEntitiesList.get(i));
                 interactionButton.setVisibility(View.VISIBLE);
                 //.Toast.makeText(getActivity(), "Inside", Toast.LENGTH_LONG).show();
             }
         }
 
-        Log.d("CUSTOM", Integer.toString(reachableMarkers.size()));
+        Log.d("CUSTOM", Integer.toString(reachableMapEntitiesList.size()));
 
     }
     /*
@@ -240,12 +288,12 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
 
     public void interactWithClicked(View v){
         AlertDialog.Builder builderSingle = new AlertDialog.Builder(getActivity());
-        builderSingle.setIcon(R.drawable.map_icon);
+        //builderSingle.setIcon(R.drawable.map_icon);
         builderSingle.setTitle("Select...");
 
-        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getActivity(), R.layout.select_dialog_singlechoice);
-        for(int i = 0; i < reachableMarkers.size(); i++ ){
-            arrayAdapter.add(reachableMarkers.get(i).getTitle().toString());
+        final ArrayAdapter<MapEntity> arrayAdapter = new ArrayAdapter<MapEntity>(getActivity(), R.layout.select_dialog_singlechoice, R.id.DialogItem);
+        for(int i = 0; i < reachableMapEntitiesList.size(); i++ ){
+            arrayAdapter.add(reachableMapEntitiesList.get(i));
         }
 
         builderSingle.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -258,8 +306,15 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
         builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                String strName = arrayAdapter.getItem(i);
+                String strName = arrayAdapter.getItem(i).getEntityName();
                 Log.d("CUSTOM", "SELECTED: " + strName);
+
+                Bundle b = new Bundle();
+                b.putParcelable("ENTITY_SELECTED", arrayAdapter.getItem(i));
+
+                Intent intent = new Intent(getActivity(), NPCConversation.class);
+                intent.putExtras(b);
+                startActivity(intent);
             }
         });
         builderSingle.show();
