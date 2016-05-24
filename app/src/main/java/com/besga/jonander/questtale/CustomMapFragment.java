@@ -141,7 +141,8 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
         //map.setOnMarkerClickListener(this);
 
         // Download markers
-        String entities_data = "{'entities_data':\n" +
+        String entities_data = "" +
+                "{'entities_data':\n" +
                 "    [\n" +
                 "        {\n" +
                 "            'entity_id': 1,\n" +
@@ -174,6 +175,17 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
                 "                'lat': 43.239640,\n" +
                 "                'lng': -2.878077,\n" +
                 "                'title': '?'\n" +
+                "            }\n" +
+                "        },\n" +
+                "        {\n" +
+                "            'entity_id': 4,\n" +
+                "            'entity_name': 'David Vidal',\n" +
+                "            'conversation': 'Vicio al Elite',\n" +
+                "            'close_answer': 'SPACEEEEEEEEEEEE',\n" +
+                "            'marker_data': {\n" +
+                "                'lat': 43.239806,\n" +
+                "                'lng': -2.878246,\n" +
+                "                'title': 'Pirata espacial'\n" +
                 "            }\n" +
                 "        }\n" +
                 "    ]\n" +
@@ -265,15 +277,18 @@ public class CustomMapFragment extends Fragment implements OnMapReadyCallback, L
                     interactiveRadius.getCenter().latitude, interactiveRadius.getCenter().longitude, distance);
 
             if( distance[0] > interactiveRadius.getRadius()  ){
-                interactionButton.setVisibility(View.GONE);
                 //Toast.makeText(getActivity(), "Outside", Toast.LENGTH_LONG).show();
             } else {
                 reachableMapEntitiesList.add(mapEntitiesList.get(i));
-                interactionButton.setVisibility(View.VISIBLE);
                 //.Toast.makeText(getActivity(), "Inside", Toast.LENGTH_LONG).show();
             }
         }
-
+        if(reachableMapEntitiesList.size() > 0){
+            interactionButton.setVisibility(View.VISIBLE);
+        }
+        else{
+            interactionButton.setVisibility(View.GONE);
+        }
         Log.d("CUSTOM", Integer.toString(reachableMapEntitiesList.size()));
 
     }
